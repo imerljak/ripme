@@ -1,45 +1,16 @@
 package com.rarchives.ripme.ui;
 
-import java.awt.*;
-import java.awt.TrayIcon.MessageType;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.List;
+import com.rarchives.ripme.ripper.AbstractRipper;
+import com.rarchives.ripme.utils.ResourceBundleLoader;
+import com.rarchives.ripme.utils.RipUtils;
+import com.rarchives.ripme.utils.Utils;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import javax.imageio.ImageIO;
-import javax.swing.DefaultListModel;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -50,17 +21,19 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
-
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
-import com.rarchives.ripme.ripper.AbstractRipper;
-import com.rarchives.ripme.utils.RipUtils;
-import com.rarchives.ripme.utils.Utils;
-
-import javax.swing.UnsupportedLookAndFeelException;
+import java.awt.*;
+import java.awt.TrayIcon.MessageType;
+import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.List;
 
 /**
  * Everything UI-related starts and ends here.
@@ -141,11 +114,10 @@ public final class MainWindow implements Runnable, RipStatusHandler {
 
     private static AbstractRipper ripper;
 
-    private ResourceBundle rb = Utils.getResourceBundle(null);
+    private ResourceBundle rb = ResourceBundleLoader.getResourceBundle();
 
-    // All the langs ripme has been translated into
-    private static String[] supportedLanges = new String[] {"en_US", "de_DE", "es_ES", "fr_CH", "kr_KR", "pt_PT",
-            "fi_FI", "in_ID", "nl_NL", "porrisavvo_FI", "ru_RU"};
+    // Automagically loads supported langs from resources list.
+    private static String[] supportedLanges = Utils.getRegisteredI18nLangs();
 
     private void updateQueueLabel() {
         if (queueListModel.size() > 0) {
@@ -290,8 +262,8 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         ripTextfield = new JTextField("", 20);
         ripTextfield.addMouseListener(new ContextMenuMouseListener());
         ImageIcon ripIcon = new ImageIcon(mainIcon);
-        ripButton = new JButton("<html><font size=\"5\"><b>Rip</b></font></html>", ripIcon);
-        stopButton = new JButton("<html><font size=\"5\"><b>Stop</b></font></html>");
+        ripButton = new JButton("<html><font size=\"5\"><b>" + rb.getString("Rip") + "</b></font></html>", ripIcon);
+        stopButton = new JButton("<html><font size=\"5\"><b>" + rb.getString("Stop") + "</b></font></html>");
         stopButton.setEnabled(false);
         try {
             Image stopIcon = ImageIO.read(getClass().getClassLoader().getResource("stop.png"));
@@ -502,6 +474,9 @@ public final class MainWindow implements Runnable, RipStatusHandler {
 
         configLogLevelCombobox = new JComboBox<>(new String[] {"Log level: Error", "Log level: Warn", "Log level: Info", "Log level: Debug"});
         configSelectLangComboBox = new JComboBox<>(supportedLanges);
+
+        configSelectLangComboBox.setSelectedItem(rb.getLocale().toString());
+
         configLogLevelCombobox.setSelectedItem(Utils.getConfigString("log.level", "Log level: Debug"));
         setLogLevel(configLogLevelCombobox.getSelectedItem().toString());
         configSaveDirLabel = new JLabel();
@@ -600,6 +575,8 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         optionHistory.setText(rb.getString("History"));
         optionQueue.setText(rb.getString("Queue"));
         optionConfiguration.setText(rb.getString("Configuration"));
+        ripButton.setText("<html><font size=\"5\"><b>" + rb.getString("Rip") + "</b></font></html>");
+        stopButton.setText("<html><font size=\"5\"><b>" + rb.getString("Stop") + "</b></font></html>");
     }
 
     private void setupHandlers() {
@@ -800,7 +777,7 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         });
         configSelectLangComboBox.addActionListener(arg0 -> {
             String level = ((JComboBox) arg0.getSource()).getSelectedItem().toString();
-            rb = Utils.getResourceBundle(level);
+            rb = ResourceBundleLoader.loadBundle(level);
             changeLocale();
         });
         configSaveDirLabel.addMouseListener(new MouseAdapter() {

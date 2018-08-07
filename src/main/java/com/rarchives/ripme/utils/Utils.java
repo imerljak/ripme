@@ -15,21 +15,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -692,12 +683,43 @@ public class Utils {
     }
 
     /**
+     * Automagically loads existing translations names (ignores default, since its the same as en_US).
+     * @return String array containing extracted language codes from existing bundle names (eg. en_US).
+     */
+    public static String[] getRegisteredI18nLangs() {
+
+        List<String> langList = new ArrayList<>();
+
+        try {
+            LOGGER.info("Loading existing resource bundles.");
+            File file = new File(Utils.class.getResource("/").toURI());
+
+            // If I18n bundles prefix changes, this needs to be changed also.
+            final String prefix = "LabelsBundle_";
+
+            LOGGER.info("Filtering i18n bundles available.");
+            for (String s : file.list((dir, name) -> name.startsWith(prefix))) {
+                langList.add(s.substring(prefix.length(), s.lastIndexOf(".")));
+            }
+
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        // Sorts the names alphabetically
+        LOGGER.info("Sorting i18n bundle names alphabetically");
+        langList.sort(Comparator.naturalOrder());
+
+        return langList.toArray(new String[0]);
+    }
+
+    /**
      * Gets the ResourceBundle AKA language package.
      * Used for choosing the language of the UI.
      *
      * @return Returns the default resource bundle using the language specified in the config file.
      */
-    public static ResourceBundle getResourceBundle(String langSelect) {
+    static ResourceBundle getResourceBundle(String langSelect) {
         if (langSelect == null) {
             if (!getConfigString("lang", "").equals("")) {
                 String[] langCode = getConfigString("lang", "").split("_");
@@ -722,8 +744,8 @@ public class Utils {
      * Formats and reuturns the status text for rippers using the byte progress bar
      *
      * @param completionPercentage An int between 0 and 100 which repersents how close the download is to complete
-     * @param bytesCompleted How many bytes have been downloaded
-     * @param bytesTotal The total size of the file that is being downloaded
+     * @param bytesCompleted       How many bytes have been downloaded
+     * @param bytesTotal           The total size of the file that is being downloaded
      * @return Returns the formatted status text for rippers using the byte progress bar
      */
     public static String getByteStatusText(int completionPercentage, int bytesCompleted, int bytesTotal) {
@@ -765,7 +787,7 @@ public class Utils {
         for (File file : listOfFiles) {
             if (file.isFile()) {
                 String[] filename = file.getName().split("\\.(?=[^\\.]+$)"); //split filename from it's extension
-                if(filename[0].equalsIgnoreCase(fileName)) {
+                if (filename[0].equalsIgnoreCase(fileName)) {
                     return true;
                 }
             }
