@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -26,10 +25,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -689,33 +685,6 @@ public class Utils {
             cookieCache.put(host, domainCookies);
         }
         return domainCookies;
-    }
-
-    /**
-     * Gets the ResourceBundle AKA language package.
-     * Used for choosing the language of the UI.
-     *
-     * @return Returns the default resource bundle using the language specified in the config file.
-     */
-    static ResourceBundle getResourceBundle(String langSelect) {
-        if (langSelect == null) {
-            if (!getConfigString("lang", "").equals("")) {
-                String[] langCode = getConfigString("lang", "").split("_");
-                LOGGER.info("Setting locale to " + getConfigString("lang", ""));
-                return ResourceBundle.getBundle("LabelsBundle", new Locale(langCode[0], langCode[1]), new UTF8Control());
-            }
-        } else {
-            String[] langCode = langSelect.split("_");
-            LOGGER.info("Setting locale to " + langSelect);
-            return ResourceBundle.getBundle("LabelsBundle", new Locale(langCode[0], langCode[1]), new UTF8Control());
-        }
-        try {
-            LOGGER.info("Setting locale to default");
-            return ResourceBundle.getBundle("LabelsBundle", Locale.getDefault(), new UTF8Control());
-        } catch (MissingResourceException e) {
-            LOGGER.info("Setting locale to root");
-            return ResourceBundle.getBundle("LabelsBundle", Locale.ROOT);
-        }
     }
 
     /**
