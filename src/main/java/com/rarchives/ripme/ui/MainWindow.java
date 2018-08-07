@@ -10,7 +10,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -57,7 +56,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.rarchives.ripme.ripper.AbstractRipper;
-import com.rarchives.ripme.utils.ResourceBundleLoader;
+import com.rarchives.ripme.ui.i18n.I18nJButton;
+import com.rarchives.ripme.ui.i18n.I18nJCheckBox;
+import com.rarchives.ripme.ui.i18n.I18nJLabel;
+import com.rarchives.ripme.ui.i18n.I18nJTable;
+import com.rarchives.ripme.ui.i18n.ResourceBundleManager;
 import com.rarchives.ripme.utils.RipUtils;
 import com.rarchives.ripme.utils.Utils;
 
@@ -142,7 +145,7 @@ public final class MainWindow implements Runnable, RipStatusHandler {
 
     private static AbstractRipper ripper;
 
-    private ResourceBundle rb = ResourceBundleLoader.getBundle();
+    private ResourceBundle rb = ResourceBundleManager.getBundle();
 
     // All the langs ripme has been translated into
     private static String[] supportedLanges = new String[] {"en_US", "de_DE", "es_ES", "fr_CH", "kr_KR", "pt_BR", "pt_PT",
@@ -166,7 +169,7 @@ public final class MainWindow implements Runnable, RipStatusHandler {
     }
 
     private static JCheckBox addNewCheckbox(String text, String configString, Boolean configBool) {
-        JCheckBox checkbox = new JCheckBox(text, Utils.getConfigBoolean(configString, configBool));
+        JCheckBox checkbox = new I18nJCheckBox(text, Utils.getConfigBoolean(configString, configBool));
         checkbox.setHorizontalAlignment(JCheckBox.RIGHT);
         checkbox.setHorizontalTextPosition(JCheckBox.LEFT);
         return checkbox;
@@ -291,8 +294,8 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         ripTextfield = new JTextField("", 20);
         ripTextfield.addMouseListener(new ContextMenuMouseListener());
         ImageIcon ripIcon = new ImageIcon(mainIcon);
-        ripButton = new JButton("<html><font size=\"5\"><b>Rip</b></font></html>", ripIcon);
-        stopButton = new JButton("<html><font size=\"5\"><b>Stop</b></font></html>");
+        ripButton = new I18nJButton("Rip",ripIcon);
+        stopButton = new I18nJButton("Stop");
         stopButton.setEnabled(false);
         try {
             Image stopIcon = ImageIO.read(getClass().getClassLoader().getResource("stop.png"));
@@ -313,7 +316,7 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         gbc.gridx = 3; ripPanel.add(stopButton, gbc);
         gbc.weightx = 1;
 
-        statusLabel = new JLabel(rb.getString("inactive"));
+        statusLabel = new I18nJLabel("inactive");
         statusLabel.setHorizontalAlignment(JLabel.CENTER);
         openButton = new JButton();
         openButton.setVisible(false);
@@ -331,10 +334,12 @@ public final class MainWindow implements Runnable, RipStatusHandler {
 
         JPanel optionsPanel = new JPanel(new GridBagLayout());
         optionsPanel.setBorder(emptyBorder);
-        optionLog = new JButton(rb.getString("Log"));
-        optionHistory = new JButton(rb.getString("History"));
-        optionQueue = new JButton(rb.getString("Queue"));
-        optionConfiguration = new JButton(rb.getString("Configuration"));
+        optionLog = new I18nJButton("Log");
+        optionHistory = new I18nJButton("History");
+        optionQueue = new I18nJButton("Queue");
+
+        optionConfiguration = new I18nJButton("Configuration");
+
         optionLog.setFont(optionLog.getFont().deriveFont(Font.PLAIN));
         optionHistory.setFont(optionLog.getFont().deriveFont(Font.PLAIN));
         optionQueue.setFont(optionLog.getFont().deriveFont(Font.PLAIN));
@@ -373,41 +378,10 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         historyPanel.setBorder(emptyBorder);
         historyPanel.setVisible(false);
         historyPanel.setPreferredSize(new Dimension(300, 250));
-        historyTableModel = new AbstractTableModel() {
-            private static final long serialVersionUID = 1L;
-            @Override
-            public String getColumnName(int col) {
-                return HISTORY.getColumnName(col);
-            }
-            @Override
-            public Class<?> getColumnClass(int c) {
-                return getValueAt(0, c).getClass();
-            }
-            @Override
-            public Object getValueAt(int row, int col) {
-                return HISTORY.getValueAt(row, col);
-            }
-            @Override
-            public int getRowCount() {
-                return HISTORY.toList().size();
-            }
-            @Override
-            public int getColumnCount() {
-                return HISTORY.getColumnCount();
-            }
-            @Override
-            public boolean isCellEditable(int row, int col) {
-                return (col == 0 || col == 4);
-            }
-            @Override
-            public void setValueAt(Object value, int row, int col) {
-                if (col == 4) {
-                    HISTORY.get(row).selected = (Boolean) value;
-                    historyTableModel.fireTableDataChanged();
-                }
-            }
-        };
-        historyTable = new JTable(historyTableModel);
+
+        historyTableModel = new History();
+
+        historyTable = new I18nJTable(historyTableModel);
         historyTable.addMouseListener(new HistoryMenuMouseListener());
         historyTable.setAutoCreateRowSorter(true);
         for (int i = 0; i < historyTable.getColumnModel().getColumnCount(); i++) {
@@ -426,9 +400,9 @@ public final class MainWindow implements Runnable, RipStatusHandler {
             historyTable.getColumnModel().getColumn(i).setPreferredWidth(width);
         }
         JScrollPane historyTableScrollPane = new JScrollPane(historyTable);
-        historyButtonRemove = new JButton(rb.getString("remove"));
-        historyButtonClear  = new JButton(rb.getString("clear"));
-        historyButtonRerip  = new JButton(rb.getString("re-rip.checked"));
+        historyButtonRemove = new I18nJButton("remove");
+        historyButtonClear  = new I18nJButton("clear");
+        historyButtonRerip  = new I18nJButton("re-rip.checked");
         gbc.gridx = 0;
         // History List Panel
         JPanel historyTablePanel = new JPanel(new GridBagLayout());
@@ -479,32 +453,33 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         configurationPanel.setBorder(emptyBorder);
         configurationPanel.setVisible(false);
         // TODO Configuration components
-        configUpdateButton = new JButton(rb.getString("check.for.updates"));
+        configUpdateButton = new I18nJButton("check.for.updates");
+
         configUpdateLabel = new JLabel( rb.getString("current.version") + ": " + UpdateUtils.getThisJarVersion(), JLabel.RIGHT);
-        configThreadsLabel = new JLabel(rb.getString("max.download.threads") + ":", JLabel.RIGHT);
-        configTimeoutLabel = new JLabel(rb.getString("timeout.mill"), JLabel.RIGHT);
-        configRetriesLabel = new JLabel(rb.getString("retry.download.count"), JLabel.RIGHT);
+        configThreadsLabel = new I18nJLabel("max.download.threads", JLabel.RIGHT);
+        configTimeoutLabel = new I18nJLabel("timeout.mill", JLabel.RIGHT);
+        configRetriesLabel = new I18nJLabel("retry.download.count", JLabel.RIGHT);
         configThreadsText = new JTextField(Integer.toString(Utils.getConfigInteger("threads.size", 3)));
         configTimeoutText = new JTextField(Integer.toString(Utils.getConfigInteger("download.timeout", 60000)));
         configRetriesText = new JTextField(Integer.toString(Utils.getConfigInteger("download.retries", 3)));
-        configOverwriteCheckbox = addNewCheckbox(rb.getString("overwrite.existing.files"), "file.overwrite", false);
-        configAutoupdateCheckbox = addNewCheckbox(rb.getString("auto.update"), "auto.update", true);
-        configPlaySound = addNewCheckbox(rb.getString("sound.when.rip.completes"), "play.sound", false);
-        configShowPopup = addNewCheckbox(rb.getString("notification.when.rip.starts"), "download.show_popup", false);
-        configSaveOrderCheckbox = addNewCheckbox(rb.getString("preserve.order"), "download.save_order", true);
-        configSaveLogs = addNewCheckbox(rb.getString("save.logs"), "log.save", false);
-        configSaveURLsOnly = addNewCheckbox(rb.getString("save.urls.only"), "urls_only.save", false);
-        configSaveAlbumTitles = addNewCheckbox(rb.getString("save.album.titles"), "album_titles.save", true);
-        configClipboardAutorip = addNewCheckbox(rb.getString("autorip.from.clipboard"), "clipboard.autorip", false);
-        configSaveDescriptions = addNewCheckbox(rb.getString("save.descriptions"), "descriptions.save", true);
-        configPreferMp4 = addNewCheckbox(rb.getString("prefer.mp4.over.gif"),"prefer.mp4", false);
-        configWindowPosition = addNewCheckbox(rb.getString("restore.window.position"), "window.position", true);
-        configURLHistoryCheckbox = addNewCheckbox(rb.getString("remember.url.history"), "remember.url_history", true);
+        configOverwriteCheckbox = addNewCheckbox("overwrite.existing.files", "file.overwrite", false);
+        configAutoupdateCheckbox = addNewCheckbox("auto.update", "auto.update", true);
+        configPlaySound = addNewCheckbox("sound.when.rip.completes", "play.sound", false);
+        configShowPopup = addNewCheckbox("notification.when.rip.starts", "download.show_popup", false);
+        configSaveOrderCheckbox = addNewCheckbox("preserve.order", "download.save_order", true);
+        configSaveLogs = addNewCheckbox("save.logs", "log.save", false);
+        configSaveURLsOnly = addNewCheckbox("save.urls.only", "urls_only.save", false);
+        configSaveAlbumTitles = addNewCheckbox("save.album.titles", "album_titles.save", true);
+        configClipboardAutorip = addNewCheckbox("autorip.from.clipboard", "clipboard.autorip", false);
+        configSaveDescriptions = addNewCheckbox("save.descriptions", "descriptions.save", true);
+        configPreferMp4 = addNewCheckbox("prefer.mp4.over.gif","prefer.mp4", false);
+        configWindowPosition = addNewCheckbox("restore.window.position", "window.position", true);
+        configURLHistoryCheckbox = addNewCheckbox("remember.url.history", "remember.url_history", true);
 
         configLogLevelCombobox = new JComboBox<>(new String[] {"Log level: Error", "Log level: Warn", "Log level: Info", "Log level: Debug"});
 
         configSelectLangComboBox = new JComboBox<>(supportedLanges);
-        configSelectLangComboBox.setSelectedItem(ResourceBundleLoader.getBundleLocaleString());
+        configSelectLangComboBox.setSelectedItem(ResourceBundleManager.getBundleLocaleString());
 
         configLogLevelCombobox.setSelectedItem(Utils.getConfigString("log.level", "Log level: Debug"));
         setLogLevel(configLogLevelCombobox.getSelectedItem().toString());
@@ -517,7 +492,7 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         } catch (Exception e) { }
         configSaveDirLabel.setToolTipText(configSaveDirLabel.getText());
         configSaveDirLabel.setHorizontalAlignment(JLabel.RIGHT);
-        configSaveDirButton = new JButton("Select Save Directory...");
+        configSaveDirButton = new I18nJButton("select.save.directory");
 
         addItemToConfigGridBagConstraints(gbc, 0, configUpdateLabel, configUpdateButton);
         addItemToConfigGridBagConstraints(gbc, 1, configAutoupdateCheckbox, configLogLevelCombobox);
@@ -554,6 +529,9 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         gbc.gridy = 5; pane.add(emptyPanel, gbc);
         gbc.weighty = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
+
+
+        ResourceBundleManager.notifyResourceBundleChange();
     }
 
     private void addItemToConfigGridBagConstraints(GridBagConstraints gbc, int gbcYValue, JLabel thing1ToAdd, JButton thing2ToAdd ) {
@@ -578,32 +556,6 @@ public final class MainWindow implements Runnable, RipStatusHandler {
 
     private void addItemToConfigGridBagConstraints(GridBagConstraints gbc, int gbcYValue, JComboBox thing1ToAdd ) {
         gbc.gridy = gbcYValue;  gbc.gridx = 0; configurationPanel.add(thing1ToAdd, gbc);
-    }
-
-    private void changeLocale() {
-        statusLabel.setText(rb.getString("inactive"));
-        configUpdateButton.setText(rb.getString("check.for.updates"));
-        configUpdateLabel.setText(rb.getString("current.version") + ": " + UpdateUtils.getThisJarVersion());
-        configThreadsLabel.setText(rb.getString("max.download.threads"));
-        configTimeoutLabel.setText(rb.getString("timeout.mill"));
-        configRetriesLabel.setText(rb.getString("retry.download.count"));
-        configOverwriteCheckbox.setText(rb.getString("overwrite.existing.files"));
-        configAutoupdateCheckbox.setText(rb.getString("auto.update"));
-        configPlaySound.setText(rb.getString("sound.when.rip.completes"));
-        configShowPopup.setText(rb.getString("notification.when.rip.starts"));
-        configSaveOrderCheckbox.setText(rb.getString("preserve.order"));
-        configSaveLogs.setText(rb.getString("save.logs"));
-        configSaveURLsOnly.setText(rb.getString("save.urls.only"));
-        configSaveAlbumTitles.setText(rb.getString("save.album.titles"));
-        configClipboardAutorip.setText(rb.getString("autorip.from.clipboard"));
-        configSaveDescriptions.setText(rb.getString("save.descriptions"));
-        configPreferMp4.setText(rb.getString("prefer.mp4.over.gif"));
-        configWindowPosition.setText(rb.getString("restore.window.position"));
-        configURLHistoryCheckbox.setText(rb.getString("remember.url.history"));
-        optionLog.setText(rb.getString("Log"));
-        optionHistory.setText(rb.getString("History"));
-        optionQueue.setText(rb.getString("Queue"));
-        optionConfiguration.setText(rb.getString("Configuration"));
     }
 
     private void setupHandlers() {
@@ -804,8 +756,7 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         });
         configSelectLangComboBox.addActionListener(arg0 -> {
             String language = ((JComboBox) arg0.getSource()).getSelectedItem().toString();
-            rb = ResourceBundleLoader.loadBundle(language);
-            changeLocale();
+            rb = ResourceBundleManager.loadBundle(language);
         });
         configSaveDirLabel.addMouseListener(new MouseAdapter() {
             @Override

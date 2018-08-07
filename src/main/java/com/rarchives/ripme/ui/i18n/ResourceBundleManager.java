@@ -1,17 +1,22 @@
-package com.rarchives.ripme.utils;
+package com.rarchives.ripme.ui.i18n;
 
 import static com.rarchives.ripme.utils.Utils.getConfigString;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import org.apache.log4j.Logger;
 
-public class ResourceBundleLoader {
+import com.rarchives.ripme.utils.UTF8Control;
+
+public class ResourceBundleManager {
 
     private static ResourceBundle bundle;
-    private static final Logger LOGGER = Logger.getLogger(ResourceBundleLoader.class);
+    private static final Logger LOGGER = Logger.getLogger(ResourceBundleManager.class);
+    private static List<ResourceBundleChangeObserver> observers = new ArrayList<>();
 
     static {
         bundle = getResourceBundle(null);
@@ -24,7 +29,9 @@ public class ResourceBundleLoader {
      * @return loaded {@link ResourceBundle}
      */
     public static ResourceBundle loadBundle(String lang) {
-        return (bundle = getResourceBundle(lang));
+        bundle = getResourceBundle(lang);
+        notifyResourceBundleChange();
+        return bundle;
     }
 
     /**
@@ -70,5 +77,19 @@ public class ResourceBundleLoader {
             LOGGER.info("Setting locale to root");
             return ResourceBundle.getBundle("LabelsBundle", Locale.ROOT);
         }
+    }
+
+    public static void addObserver(ResourceBundleChangeObserver observer) {
+        if (!observers.contains(observer)) {
+            observers.add(observer);
+        }
+    }
+
+    public static void removeObserver(ResourceBundleChangeObserver observer) {
+        observers.remove(observer);
+    }
+
+    public static void notifyResourceBundleChange() {
+        observers.forEach(o -> o.update(getBundle()));
     }
 }

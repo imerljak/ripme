@@ -9,24 +9,31 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.ResourceBundle;
+
+import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class History {
+import com.rarchives.ripme.ui.i18n.ResourceBundleChangeObserver;
+import com.rarchives.ripme.ui.i18n.ResourceBundleManager;
+
+public class History extends AbstractTableModel implements ResourceBundleChangeObserver {
     private final List<HistoryEntry> list;
-    private static final String[] COLUMNS = new String[] {
-        "URL",
-        "created",
-        "modified",
-        "#",
-        ""
+    private static String[] COLUMNS = new String[] {
+            "URL",
+            "created",
+            "modified",
+            "#",
+            ""
     };
 
     public History() {
         this.list = new ArrayList<>();
+        ResourceBundleManager.addObserver(this);
     }
 
     public void add(HistoryEntry entry) {
@@ -44,12 +51,41 @@ public class History {
     public HistoryEntry get(int index) {
         return list.get(index);
     }
+
+    @Override
     public String getColumnName(int index) {
         return COLUMNS[index];
     }
+
+    @Override
+    public int getRowCount() {
+        return list.size();
+    }
+
+    @Override
     public int getColumnCount() {
         return COLUMNS.length;
     }
+
+    @Override
+    public Class<?> getColumnClass(int i) {
+        return getValueAt(0, i).getClass();
+    }
+
+    @Override
+    public boolean isCellEditable(int row, int col) {
+        return (col == 0 || col == 4);
+    }
+
+    @Override
+    public void setValueAt(Object value, int row, int col) {
+        if (col == 4) {
+            get(row).selected = (Boolean) value;
+            fireTableDataChanged();
+        }
+    }
+
+    @Override
     public Object getValueAt(int row, int col) {
         HistoryEntry entry = this.list.get(row);
         switch (col) {
@@ -136,5 +172,16 @@ public class History {
         try (OutputStream os = new FileOutputStream(filename)) {
             IOUtils.write(toJSON().toString(2), os);
         }
+    }
+
+    @Override
+    public void update(ResourceBundle bundle) {
+        COLUMNS = new String[] {
+                "URL",
+                bundle.getString("created"),
+                bundle.getString("modified"),
+                "#",
+                ""
+        };
     }
 }
