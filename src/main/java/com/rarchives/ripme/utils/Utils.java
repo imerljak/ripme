@@ -697,7 +697,7 @@ public class Utils {
      *
      * @return Returns the default resource bundle using the language specified in the config file.
      */
-    public static ResourceBundle getResourceBundle(String langSelect) {
+    static ResourceBundle getResourceBundle(String langSelect) {
         if (langSelect == null) {
             if (!getConfigString("lang", "").equals("")) {
                 String[] langCode = getConfigString("lang", "").split("_");

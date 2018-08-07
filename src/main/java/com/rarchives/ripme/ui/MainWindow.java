@@ -57,6 +57,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.rarchives.ripme.ripper.AbstractRipper;
+import com.rarchives.ripme.utils.ResourceBundleLoader;
 import com.rarchives.ripme.utils.RipUtils;
 import com.rarchives.ripme.utils.Utils;
 
@@ -141,7 +142,7 @@ public final class MainWindow implements Runnable, RipStatusHandler {
 
     private static AbstractRipper ripper;
 
-    private ResourceBundle rb = Utils.getResourceBundle(null);
+    private ResourceBundle rb = ResourceBundleLoader.getBundle();
 
     // All the langs ripme has been translated into
     private static String[] supportedLanges = new String[] {"en_US", "de_DE", "es_ES", "fr_CH", "kr_KR", "pt_BR", "pt_PT",
@@ -501,7 +502,10 @@ public final class MainWindow implements Runnable, RipStatusHandler {
         configURLHistoryCheckbox = addNewCheckbox(rb.getString("remember.url.history"), "remember.url_history", true);
 
         configLogLevelCombobox = new JComboBox<>(new String[] {"Log level: Error", "Log level: Warn", "Log level: Info", "Log level: Debug"});
+
         configSelectLangComboBox = new JComboBox<>(supportedLanges);
+        configSelectLangComboBox.setSelectedItem(ResourceBundleLoader.getBundleLocaleString());
+
         configLogLevelCombobox.setSelectedItem(Utils.getConfigString("log.level", "Log level: Debug"));
         setLogLevel(configLogLevelCombobox.getSelectedItem().toString());
         configSaveDirLabel = new JLabel();
@@ -799,8 +803,8 @@ public final class MainWindow implements Runnable, RipStatusHandler {
             setLogLevel(level);
         });
         configSelectLangComboBox.addActionListener(arg0 -> {
-            String level = ((JComboBox) arg0.getSource()).getSelectedItem().toString();
-            rb = Utils.getResourceBundle(level);
+            String language = ((JComboBox) arg0.getSource()).getSelectedItem().toString();
+            rb = ResourceBundleLoader.loadBundle(language);
             changeLocale();
         });
         configSaveDirLabel.addMouseListener(new MouseAdapter() {
